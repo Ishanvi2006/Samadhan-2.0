@@ -1,0 +1,45 @@
+// Import express
+const express = require("express");
+const app = express();
+
+app.use(express.json());
+
+// Fake database (array of students)
+let students = [
+  { id: 1, name: "ashish", course: "CSE" },
+  { id: 2, name: "Rahul", course: "ECE" },
+];
+
+// Route 1: GET /students → return list of students
+app.get("/students", (req, res) => {
+  res.json(students);
+});
+
+// Route 2: POST /students → add a new student
+app.post("/students", (req, res) => {
+  const newStudent = {
+    id: students.length + 1,
+    name: req.body.name,
+    course: req.body.course,
+  };
+  students.push(newStudent);
+  res.status(201).json(newStudent);
+});
+
+// Route 3 GET /students/:id → fetch a student by ID
+app.get("/students/:id", (req, res) => {
+  const studentId = parseInt(req.params.id); // convert string to number
+  const student = students.find((s) => s.id === studentId);
+
+  if (!student) {
+    return res.status(404).json({ error: "Student not found" });
+  }
+
+  res.json(student);
+});
+
+// Start server
+const PORT = 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
+});
