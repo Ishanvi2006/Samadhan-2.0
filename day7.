@@ -1,0 +1,173 @@
+import { useState } from "react";
+
+export default function App() {
+  // Counter state
+  const [value, setValue] = useState(0);
+  const [clicks, setClicks] = useState(0);
+  const [step, setStep] = useState(1);
+  const MIN = -9999;
+  const MAX = 9999;
+
+  // Text state
+  const [title, setTitle] = useState("");
+  const [text, setText] = useState("");
+  const [charLimit, setCharLimit] = useState(0);
+  const [previewType, setPreviewType] = useState("plain");
+
+  // Counter functions
+  const updateClicks = () => setClicks(clicks + 1);
+  const increase = () => {
+    setValue((prev) => Math.min(MAX, prev + step));
+    updateClicks();
+  };
+  const decrease = () => {
+    setValue((prev) => Math.max(MIN, prev - step));
+    updateClicks();
+  };
+  const reset = () => {
+    setValue(0);
+    setClicks(0);
+  };
+  const randomize = () => {
+    setValue(Math.floor(Math.random() * (MAX - MIN + 1)) + MIN);
+    updateClicks();
+  };
+
+  // Text preview helpers
+  const tinyMarkdownToHTML = (s) => {
+    const esc = s
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+    let out = esc.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+    out = out.replace(/\*(.*?)\*/g, "<em>$1</em>");
+    out = out.replace(/\n/g, "<br>");
+    return out;
+  };
+
+  let limitedText = text;
+  if (charLimit > 0 && limitedText.length > charLimit) {
+    limitedText = limitedText.slice(0, charLimit);
+  }
+
+  const charCount = limitedText.length;
+  const wordCount = limitedText.trim() === "" ? 0 : limitedText.trim().split(/\s+/).length;
+  const lineCount = limitedText.split("\n").length;
+
+  let previewContent;
+  if (previewType === "plain") {
+    previewContent = (
+      <pre>{(title ? title + "\n\n" : "") + limitedText}</pre>
+    );
+  } else if (previewType === "title-bold") {
+    previewContent = (
+      <div>
+        {title && <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 6 }}>{title}</div>}
+        <div>{limitedText.split("\n").map((line, i) => <div key={i}>{line}</div>)}</div>
+      </div>
+    );
+  } else if (previewType === "markdown") {
+    const combined = (title ? `**${title}**\n\n` : "") + limitedText;
+    previewContent = (
+      <div dangerouslySetInnerHTML={{ __html: tinyMarkdownToHTML(combined) }} />
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-950 text-slate-100 flex items-center justify-center p-6">
+      <div className="w-full max-w-5xl bg-slate-800/30 rounded-2xl shadow-xl p-6">
+        <h1 className="text-xl mb-4">Mini Task: Counter + Live Text Preview</h1>
+        <div className="grid md:grid-cols-2 gap-6">
+          {/* Counter */}
+          <div className="bg-slate-800/40 p-4 rounded-xl">
+            <div className="flex justify-between items-center">
+              <div>
+                <div className="text-slate-400 text-sm">Counter</div>
+                <div className="text-4xl font-bold" id="value">{value}</div>
+              </div>
+              <div className="text-right">
+                <div className="text-slate-400 text-sm">Step</div>
+                <input
+                  type="number"
+                  value={step}
+                  min={1}
+                  onChange={(e) => setStep(parseInt(e.target.value) || 1)}
+                  className="w-20 text-center bg-transparent border border-slate-600 rounded-lg p-1"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2 mt-3">
+              <button onClick={decrease} className="px-3 py-1 rounded-lg border border-slate-600">− Decrease</button>
+              <button onClick={increase} className="px-3 py-1 rounded-lg bg-cyan-400 text-slate-900">+ Increase</button>
+              <button onClick={reset} className="px-3 py-1 rounded-lg border border-slate-600">Reset</button>
+              <button onClick={randomize} className="px-3 py-1 rounded-lg border border-slate-600">Random</button>
+            </div>
+
+            <div className="flex gap-3 mt-3 flex-wrap text-sm text-slate-300">
+              <div className="bg-slate-700/40 px-2 py-1 rounded">Min: {MIN}</div>
+              <div className="bg-slate-700/40 px-2 py-1 rounded">Max: {MAX}</div>
+              <div className="bg-slate-700/40 px-2 py-1 rounded">Clicks: {clicks}</div>
+            </div>
+          </div>
+
+          {/* Live Text Preview */}
+          <div className="bg-slate-800/40 p-4 rounded-xl">
+            <label className="text-sm">Title (live)</label>
+            <input
+              type="text"
+              placeholder="Type a title..."
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="w-full mb-2 p-2 rounded bg-transparent border border-slate-600"
+            />
+
+            <label className="text-sm">Message (live)</label>
+            <textarea
+              placeholder="Write something..."
+              value={limitedText}
+              onChange={(e) => setText(e.target.value)}
+              className="w-full mb-2 p-2 rounded bg-transparent border border-slate-600 min-h-[100px]"
+            />
+
+            <div className="flex gap-3 mb-2">
+              <div className="flex-1">
+                <label className="text-sm">Character limit (0 = no limit)</label>
+                <input
+                  type="number"
+                  value={charLimit}
+                  min={0}
+                  onChange={(e) => setCharLimit(parseInt(e.target.value) || 0)}
+                  className="w-full p-1 rounded bg-transparent border border-slate-600"
+                />
+              </div>
+              <div className="w-40">
+                <label className="text-sm">Preview type</label>
+                <select
+                  value={previewType}
+                  onChange={(e) => setPreviewType(e.target.value)}
+                  className="w-full p-1 rounded bg-transparent border border-slate-600"
+                >
+                  <option value="plain">Plain</option>
+                  <option value="title-bold">Title Bold</option>
+                  <option value="markdown">Markdown</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="text-slate-400 text-sm mb-1">Preview</div>
+            <div className="border border-dashed border-slate-600 rounded p-2 min-h-[100px]">
+              {previewContent}
+            </div>
+
+            <div className="flex gap-3 mt-2 text-sm text-slate-300">
+              <div className="bg-slate-700/40 px-2 py-1 rounded">Chars: {charCount}</div>
+              <div className="bg-slate-700/40 px-2 py-1 rounded">Words: {wordCount}</div>
+              <div className="bg-slate-700/40 px-2 py-1 rounded">Lines: {lineCount}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
